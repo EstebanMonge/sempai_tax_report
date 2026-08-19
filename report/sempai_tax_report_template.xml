@@ -78,7 +78,29 @@
                             </tr>
 
                         </t>
+                        <tr>
+                            <td colspan="3" class="text-right">
+                                <strong>Total Sales</strong>
+                            </td>
 
+                            <td class="text-right">
+                                <strong>
+                                    <span t-esc="'%.2f' % sales_subtotal"/>
+                                </strong>
+                            </td>
+
+                            <td class="text-right">
+                                <strong>
+                                    <span t-esc="'%.2f' % sales_tax"/>
+                                </strong>
+                            </td>
+
+                            <td class="text-right">
+                                <strong>
+                                    <span t-esc="'%.2f' % sales_total"/>
+                                </strong>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
 
@@ -191,7 +213,29 @@
                                 </tr>
 
                             </t>
+                            <tr>
+                                <td colspan="3" class="text-right">
+                                    <strong>Total Purchases</strong>
+                                </td>
 
+                                <td class="text-right">
+                                    <strong>
+                                        <span t-esc="'%.2f' % purchase_subtotal"/>
+                                    </strong>
+                                </td>
+
+                                <td class="text-right">
+                                    <strong>
+                                        <span t-esc="'%.2f' % purchase_tax"/>
+                                    </strong>
+                                </td>
+
+                                <td class="text-right">
+                                    <strong>
+                                        <span t-esc="'%.2f' % purchase_total"/>
+                                    </strong>
+                                </td>
+                            </tr>
                         </tbody>
 
                     </table>

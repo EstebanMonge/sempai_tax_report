@@ -19,21 +19,37 @@ class SempaiTaxReport(models.AbstractModel):
         date_start = data.get('date_start')
         date_end = data.get('date_end')
 
-        invoice_ids = data.get('invoice_ids', [])
-        purchase_ids = data.get('purchase_ids', [])
+        # ============================================================
+        # SALES INVOICES
+        # ============================================================
 
-        invoices = self.env['account.move'].browse(invoice_ids).sorted(
-            key=lambda invoice: (
-                invoice.partner_id.name or '',
-                invoice.invoice_date or '',
-            )
+        invoice_domain = [
+            ('invoice_date', '>=', date_start),
+            ('invoice_date', '<=', date_end),
+            ('move_type', '=', 'out_invoice'),
+            ('state', '=', 'posted'),
+            ('state_tributacion', '=', 'aceptado'),
+        ]
+
+        invoices = self.env['account.move'].search(
+            invoice_domain,
+            order='partner_id, invoice_date, id'
         )
 
-        purchases = self.env['account.move'].browse(purchase_ids).sorted(
-            key=lambda purchase: (
-                purchase.partner_id.name or '',
-                purchase.invoice_date or '',
-            )
+        # ============================================================
+        # PURCHASE INVOICES
+        # ============================================================
+
+        purchase_domain = [
+            ('invoice_date', '>=', date_start),
+            ('invoice_date', '<=', date_end),
+            ('move_type', '=', 'in_invoice'),
+            ('state', '=', 'posted'),
+        ]
+
+        purchases = self.env['account.move'].search(
+            purchase_domain,
+            order='partner_id, invoice_date, id'
         )
 
         _logger.info(
@@ -87,7 +103,6 @@ class SempaiTaxReport(models.AbstractModel):
         _logger.info(
             '============================================================'
         )
-
 
         # ============================================================
         # SALES TAX GROUP CALCULATION
@@ -230,59 +245,6 @@ class SempaiTaxReport(models.AbstractModel):
             '============================================================'
         )
 
-
-        # ============================================================
-        # SALES TOTALS
-        # ============================================================
-        
-        currency = self.env.user.company_id.currency_id
-        
-        sales_subtotal = currency.round(
-            sum(
-                invoice.amount_untaxed
-                for invoice in invoices
-            )
-        )
-        
-        sales_tax = currency.round(
-            sum(
-                invoice.amount_tax
-                for invoice in invoices
-            )
-        )
-        
-        sales_total = currency.round(
-            sum(
-                invoice.amount_total
-                for invoice in invoices
-            )
-        )
-        
-        # ============================================================
-        # PURCHASE TOTALS
-        # ============================================================
-        
-        purchase_subtotal = currency.round(
-            sum(
-                purchase.amount_untaxed
-                for purchase in purchases
-            )
-        )
-        
-        purchase_tax = currency.round(
-            sum(
-                purchase.amount_tax
-                for purchase in purchases
-            )
-        )
-        
-        purchase_total = currency.round(
-            sum(
-                purchase.amount_total
-                for purchase in purchases
-            )
-        )
-
         # ============================================================
         # WIZARD DOCUMENT
         # ============================================================
@@ -303,11 +265,5 @@ class SempaiTaxReport(models.AbstractModel):
             'date_end': date_end,
             'tax_groups': tax_groups,
             'purchase_tax_groups': purchase_tax_groups,
-            'sales_subtotal': sales_subtotal,
-            'sales_tax': sales_tax,
-            'sales_total': sales_total,
-            'purchase_subtotal': purchase_subtotal,
-            'purchase_tax': purchase_tax,
-            'purchase_total': purchase_total,
         }
 
