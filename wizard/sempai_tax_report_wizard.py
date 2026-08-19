@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
+
 import logging
+
 from odoo import models, fields
 
 _logger = logging.getLogger(__name__)
+
 
 class SempaiTaxReportWizard(models.TransientModel):
     _name = 'sempai.tax.report.wizard'
@@ -17,39 +20,61 @@ class SempaiTaxReportWizard(models.TransientModel):
         string='End Date',
         required=True,
     )
+
     def action_print_report(self):
-        invoices = self.env['account.invoice'].search([
+
+        # ============================================================
+        # SALES
+        # ============================================================
+
+        invoices = self.env['account.move'].search([
             ('company_id', '=', self.env.user.company_id.id),
-            ('date_invoice', '>=', self.date_start),
-            ('date_invoice', '<=', self.date_end),
-            ('state', 'in', ['open', 'paid']),
+            ('invoice_date', '>=', self.date_start),
+            ('invoice_date', '<=', self.date_end),
+            ('state', '=', 'posted'),
             ('state_tributacion', '=', 'aceptado'),
-            ('type', '=', 'out_invoice'),
+            ('move_type', '=', 'out_invoice'),
         ]).sorted(
             key=lambda invoice: (
                 invoice.partner_id.name or '',
-                invoice.date_invoice or '',
+                invoice.invoice_date or '',
             )
         )
 
-        purchases = self.env['account.invoice'].search([
+        # ============================================================
+        # PURCHASES
+        # ============================================================
+
+        purchases = self.env['account.move'].search([
             ('company_id', '=', self.env.user.company_id.id),
-            ('date_invoice', '>=', self.date_start),
-            ('date_invoice', '<=', self.date_end),
-            ('state', 'in', ['open', 'paid']),
-            ('type', '=', 'in_invoice'),
+            ('invoice_date', '>=', self.date_start),
+            ('invoice_date', '<=', self.date_end),
+            ('state', '=', 'posted'),
+            ('move_type', '=', 'in_invoice'),
         ]).sorted(
             key=lambda invoice: (
                 invoice.partner_id.name or '',
-                invoice.date_invoice or '',
+                invoice.invoice_date or '',
             )
         )
+
+        # ============================================================
+        # SALES LOG
+        # ============================================================
 
         _logger.info(
             '============================================================'
         )
         _logger.info(
-            'SEMPAI TAX REPORT - INVOICE SEARCH'
+            'SEMPAI TAX REPORT - SALES INVOICE SEARCH'
+        )
+        _logger.info(
+            'Company ID: %s',
+            self.env.user.company_id.id,
+        )
+        _logger.info(
+            'Company: %s',
+            self.env.user.company_id.name,
         )
         _logger.info(
             'Date range: %s -> %s',
@@ -60,56 +85,69 @@ class SempaiTaxReportWizard(models.TransientModel):
             'Invoices found: %s',
             len(invoices),
         )
-     
+
         for invoice in invoices:
             _logger.info(
                 'Invoice ID=%s | Number=%s | Date=%s | Partner=%s | '
-                'State=%s | Type=%s | Amount Total=%s',
+                'State=%s | Move Type=%s | Tributacion=%s | '
+                'Amount Total=%s',
                 invoice.id,
-                invoice.number,
-                invoice.date_invoice,
-                invoice.partner_id.display_name,
+                invoice.name,
+                invoice.invoice_date,
+                invoice.partner_id.display_name
+                if invoice.partner_id else '',
                 invoice.state,
-                invoice.type,
+                invoice.move_type,
+                invoice.state_tributacion,
                 invoice.amount_total,
             )
-     
+
+        _logger.info(
+            '============================================================'
+        )
+
+        # ============================================================
+        # PURCHASE LOG
+        # ============================================================
+
         _logger.info(
             '============================================================'
         )
         _logger.info(
-            '============================================================'
-        )    
-        _logger.info(
             'SEMPAI TAX REPORT - PURCHASE SEARCH'
-        )    
+        )
         _logger.info(
             'Date range: %s -> %s',
             self.date_start,
             self.date_end,
-        )    
+        )
         _logger.info(
             'Purchases found: %s',
             len(purchases),
-        )    
-         
+        )
+
         for purchase in purchases:
             _logger.info(
                 'Purchase ID=%s | Number=%s | Date=%s | Partner=%s | '
-                'State=%s | Type=%s | Amount Total=%s',
+                'State=%s | Move Type=%s | Amount Total=%s',
                 purchase.id,
-                purchase.number,
-                purchase.date_invoice,
-                purchase.partner_id.display_name,
+                purchase.name,
+                purchase.invoice_date,
+                purchase.partner_id.display_name
+                if purchase.partner_id else '',
                 purchase.state,
-                purchase.type,
+                purchase.move_type,
                 purchase.amount_total,
             )
 
         _logger.info(
             '============================================================'
         )
-    
+
+        # ============================================================
+        # REPORT
+        # ============================================================
+
         return self.env.ref(
             'sempai_tax_report.action_sempai_tax_report'
         ).report_action(

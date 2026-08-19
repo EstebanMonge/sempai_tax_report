@@ -24,9 +24,15 @@
                 </p>
 
                 <br/>
+
+                <!-- ================================================= -->
+                <!-- SALES -->
+                <!-- ================================================= -->
+
                 <h3 style="margin-top: 20px;">
                     Sales
                 </h3>
+
                 <table class="table table-bordered">
                     <thead>
                         <tr>
@@ -46,27 +52,27 @@
                             <tr>
 
                                 <td>
-                                    <span t-esc="invoice.number"/>
+                                    <span t-esc="invoice.name"/>
                                 </td>
 
                                 <td>
-                                    <span t-esc="invoice.date_invoice"/>
+                                    <span t-esc="invoice.invoice_date"/>
                                 </td>
 
                                 <td>
                                     <span t-esc="invoice.partner_id.display_name"/>
                                 </td>
 
-                                <td>
-                                    <span t-esc="invoice.amount_untaxed"/>
+                                <td class="text-right">
+                                    <span t-esc="'%.2f' % invoice.amount_untaxed"/>
                                 </td>
 
-                                <td>
-                                    <span t-esc="invoice.amount_tax"/>
+                                <td class="text-right">
+                                    <span t-esc="'%.2f' % invoice.amount_tax"/>
                                 </td>
 
-                                <td>
-                                    <span t-esc="invoice.amount_total"/>
+                                <td class="text-right">
+                                    <span t-esc="'%.2f' % invoice.amount_total"/>
                                 </td>
 
                             </tr>
@@ -75,130 +81,178 @@
 
                     </tbody>
                 </table>
-<t t-if="not invoices">
-    <p>
-        No invoices found for this period.
-    </p>
-</t>
-<h3 style="margin-top: 30px;">
-    Sales Tax Summary
-</h3>
 
-<table class="table table-condensed">
-    <thead>
-        <tr>
-            <th>Tax Group</th>
-            <th class="text-right">Subtotal</th>
-            <th class="text-right">Tax</th>
-            <th class="text-right">Total</th>
-        </tr>
-    </thead>
+                <t t-if="not invoices">
+                    <p>
+                        No invoices found for this period.
+                    </p>
+                </t>
 
-    <tbody>
-        <t t-foreach="tax_groups.values()" t-as="tax_group">
-            <tr>
-                <td>
-                    <span t-esc="tax_group['name']"/>
-                </td>
+                <!-- ================================================= -->
+                <!-- SALES TAX SUMMARY -->
+                <!-- ================================================= -->
 
-                <td class="text-right">
-                    <span t-esc="'%.2f' % tax_group['subtotal']"/>
-                </td>
+                <h3 style="margin-top: 30px;">
+                    Sales Tax Summary
+                </h3>
 
-                <td class="text-right">
-                    <span t-esc="'%.2f' % tax_group['tax']"/>
-                </td>
+                <table class="table table-condensed">
+                    <thead>
+                        <tr>
+                            <th>Tax Group</th>
+                            <th class="text-right">Subtotal</th>
+                            <th class="text-right">Tax</th>
+                            <th class="text-right">Total</th>
+                        </tr>
+                    </thead>
 
-                <td class="text-right">
-                    <span t-esc="'%.2f' % tax_group['total']"/>
-                </td>
-            </tr>
-        </t>
-    </tbody>
-</table>
+                    <tbody>
+
+                        <t t-foreach="tax_groups.values()" t-as="tax_group">
+
+                            <tr>
+
+                                <td>
+                                    <span t-esc="tax_group['name']"/>
+                                </td>
+
+                                <td class="text-right">
+                                    <span t-esc="'%.2f' % tax_group['subtotal']"/>
+                                </td>
+
+                                <td class="text-right">
+                                    <span t-esc="'%.2f' % tax_group['tax']"/>
+                                </td>
+
+                                <td class="text-right">
+                                    <span t-esc="'%.2f' % tax_group['total']"/>
+                                </td>
+
+                            </tr>
+
+                        </t>
+
+                    </tbody>
+                </table>
+
+                <!-- ================================================= -->
+                <!-- PURCHASES -->
+                <!-- ================================================= -->
+
                 <h3 style="margin-top: 20px;">
                     Purchases
                 </h3>
-<t t-if="purchases">
-    <table class="table table-sm">
-        <thead>
-            <tr>
-                <th>Invoice</th>
-                <th>Date</th>
-                <th>Partner</th>
-                <th>Subtotal</th>
-                <th>Taxes</th>
-                <th>Total</th>
-            </tr>
-        </thead>
 
-        <tbody>
-            <t t-foreach="purchases" t-as="purchase">
-                <tr>
-                    <td>
-                        <span t-esc="purchase.number"/>
-                    </td>
+                <t t-if="purchases">
 
-                    <td>
-                        <span t-esc="purchase.date_invoice"/>
-                    </td>
+                    <table class="table table-sm">
 
-                    <td>
-                        <span t-esc="purchase.partner_id.name"/>
-                    </td>
+                        <thead>
+                            <tr>
+                                <th>Invoice</th>
+                                <th>Date</th>
+                                <th>Partner</th>
+                                <th>Subtotal</th>
+                                <th>Taxes</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
 
-                    <td class="text-right">
-                        <span t-esc="purchase.amount_untaxed"/>
-                    </td>
+                        <tbody>
 
-                    <td class="text-right">
-                        <span t-esc="purchase.amount_tax"/>
-                    </td>
+                            <t t-foreach="purchases" t-as="purchase">
 
-                    <td class="text-right">
-                        <span t-esc="purchase.amount_total"/>
-                    </td>
-                </tr>
-            </t>
-        </tbody>
-    </table>
-</t>
-<t t-if="not purchases">
-    <p>
-        No purchase invoices found for this period.
-    </p>
-</t>
-<h3>Purchase Tax Summary</h3>
+                                <tr>
 
-<table class="table table-sm">
-    <thead>
-        <tr>
-            <th>Tax Group</th>
-            <th class="text-right">Subtotal</th>
-            <th class="text-right">Tax</th>
-            <th class="text-right">Total</th>
-        </tr>
-    </thead>
+                                    <td>
+                                        <span t-esc="purchase.name"/>
+                                    </td>
 
-    <tbody>
-        <t t-foreach="purchase_tax_groups.values()" t-as="tax">
-            <tr>
-                <td>
-                    <span t-esc="tax['name']"/>
-                </td>
-                <td class="text-right">
-                    <span t-esc="tax['subtotal']"/>
-                </td>
-                <td class="text-right">
-                    <span t-esc="tax['tax']"/>
-                </td>
-                <td class="text-right">
-                    <span t-esc="tax['total']"/>
-                </td>
-            </tr>
-        </t>
-    </tbody>
-</table>
+                                    <td>
+                                        <span t-esc="purchase.invoice_date"/>
+                                    </td>
+
+                                    <td>
+                                        <span t-esc="purchase.partner_id.display_name"/>
+                                    </td>
+
+                                    <td class="text-right">
+                                        <span t-esc="'%.2f' % purchase.amount_untaxed"/>
+                                    </td>
+
+                                    <td class="text-right">
+                                        <span t-esc="'%.2f' % purchase.amount_tax"/>
+                                    </td>
+
+                                    <td class="text-right">
+                                        <span t-esc="'%.2f' % purchase.amount_total"/>
+                                    </td>
+
+                                </tr>
+
+                            </t>
+
+                        </tbody>
+
+                    </table>
+
+                </t>
+
+                <t t-if="not purchases">
+                    <p>
+                        No purchase invoices found for this period.
+                    </p>
+                </t>
+
+                <!-- ================================================= -->
+                <!-- PURCHASE TAX SUMMARY -->
+                <!-- ================================================= -->
+
+                <h3>
+                    Purchase Tax Summary
+                </h3>
+
+                <table class="table table-sm">
+
+                    <thead>
+                        <tr>
+                            <th>Tax Group</th>
+                            <th class="text-right">Subtotal</th>
+                            <th class="text-right">Tax</th>
+                            <th class="text-right">Total</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        <t t-foreach="purchase_tax_groups.values()" t-as="tax">
+
+                            <tr>
+
+                                <td>
+                                    <span t-esc="tax['name']"/>
+                                </td>
+
+                                <td class="text-right">
+                                    <span t-esc="'%.2f' % tax['subtotal']"/>
+                                </td>
+
+                                <td class="text-right">
+                                    <span t-esc="'%.2f' % tax['tax']"/>
+                                </td>
+
+                                <td class="text-right">
+                                    <span t-esc="'%.2f' % tax['total']"/>
+                                </td>
+
+                            </tr>
+
+                        </t>
+
+                    </tbody>
+
+                </table>
+
             </div>
 
         </t>

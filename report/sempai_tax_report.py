@@ -9,29 +9,99 @@ _logger = logging.getLogger(__name__)
 
 class SempaiTaxReport(models.AbstractModel):
     _name = 'report.sempai_tax_report.sempai_tax_report_document'
+    _description = 'Sempai Space Tax Report'
 
     @api.model
     def _get_report_values(self, docids, data=None):
 
         data = data or {}
 
-        invoice_ids = data.get('invoice_ids', [])
-        purchase_ids = data.get('purchase_ids', [])
         date_start = data.get('date_start')
         date_end = data.get('date_end')
 
-        invoices = self.env['account.invoice'].browse(invoice_ids).sorted(
-            key=lambda invoice: (
-                invoice.partner_id.name or '',
-                invoice.date_invoice or '',
-            )
+        # ============================================================
+        # SALES INVOICES
+        # ============================================================
+
+        invoice_domain = [
+            ('invoice_date', '>=', date_start),
+            ('invoice_date', '<=', date_end),
+            ('move_type', '=', 'out_invoice'),
+            ('state', '=', 'posted'),
+            ('state_tributacion', '=', 'aceptado'),
+        ]
+
+        invoices = self.env['account.move'].search(
+            invoice_domain,
+            order='partner_id, invoice_date, id'
         )
 
-        purchases = self.env['account.invoice'].browse(purchase_ids).sorted(
-            key=lambda invoice: (
-                invoice.partner_id.name or '',
-                invoice.date_invoice or '',
+        # ============================================================
+        # PURCHASE INVOICES
+        # ============================================================
+
+        purchase_domain = [
+            ('invoice_date', '>=', date_start),
+            ('invoice_date', '<=', date_end),
+            ('move_type', '=', 'in_invoice'),
+            ('state', '=', 'posted'),
+        ]
+
+        purchases = self.env['account.move'].search(
+            purchase_domain,
+            order='partner_id, invoice_date, id'
+        )
+
+        _logger.info(
+            '============================================================'
+        )
+        _logger.info(
+            'SEMPAI TAX REPORT'
+        )
+        _logger.info(
+            'Date range: %s -> %s',
+            date_start,
+            date_end,
+        )
+        _logger.info(
+            'Accepted sales invoices found: %s',
+            len(invoices),
+        )
+        _logger.info(
+            'Accepted purchase invoices found: %s',
+            len(purchases),
+        )
+
+        for invoice in invoices:
+            _logger.info(
+                'SALES Invoice ID=%s | Number=%s | Date=%s | Partner=%s | '
+                'Tributacion=%s | State=%s | Type=%s | Amount Total=%s',
+                invoice.id,
+                invoice.name,
+                invoice.invoice_date,
+                invoice.partner_id.display_name,
+                invoice.state_tributacion,
+                invoice.state,
+                invoice.move_type,
+                invoice.amount_total,
             )
+
+        for purchase in purchases:
+            _logger.info(
+                'PURCHASE Invoice ID=%s | Number=%s | Date=%s | Partner=%s | '
+                'Tributacion=%s | State=%s | Type=%s | Amount Total=%s',
+                purchase.id,
+                purchase.name,
+                purchase.invoice_date,
+                purchase.partner_id.display_name,
+                purchase.state_tributacion,
+                purchase.state,
+                purchase.move_type,
+                purchase.amount_total,
+            )
+
+        _logger.info(
+            '============================================================'
         )
 
         # ============================================================
@@ -44,7 +114,7 @@ class SempaiTaxReport(models.AbstractModel):
 
             for line in invoice.invoice_line_ids:
 
-                for tax in line.invoice_line_tax_ids:
+                for tax in line.tax_ids:
 
                     tax_group = tax.tax_group_id
 
@@ -84,12 +154,9 @@ class SempaiTaxReport(models.AbstractModel):
                         )
 
         # ============================================================
-        # TAX GROUP LOG
+        # SALES TAX GROUP LOG
         # ============================================================
 
-        _logger.info(
-            '============================================================'
-        )
         _logger.info(
             'TAX GROUP SUMMARY'
         )
@@ -105,26 +172,25 @@ class SempaiTaxReport(models.AbstractModel):
                 values['total'],
             )
 
-        _logger.info(
-            '============================================================'
-        )
         # ============================================================
         # PURCHASE TAX GROUP CALCULATION
         # ============================================================
+
         purchase_tax_groups = {}
-     
+
         for purchase in purchases:
+
             for line in purchase.invoice_line_ids:
-         
-                for tax in line.invoice_line_tax_ids:
-         
+
+                for tax in line.tax_ids:
+
                     tax_group = tax.tax_group_id
-         
+
                     if not tax_group:
                         continue
-         
+
                     group_id = tax_group.id
-         
+
                     if group_id not in purchase_tax_groups:
                         purchase_tax_groups[group_id] = {
                             'name': tax_group.name,
@@ -132,7 +198,7 @@ class SempaiTaxReport(models.AbstractModel):
                             'tax': 0.0,
                             'total': 0.0,
                         }
-         
+
                     taxes = tax.compute_all(
                         line.price_unit,
                         purchase.currency_id,
@@ -140,83 +206,50 @@ class SempaiTaxReport(models.AbstractModel):
                         product=line.product_id,
                         partner=purchase.partner_id,
                     )
-         
+
                     for tax_value in taxes['taxes']:
-         
+
                         if tax_value['id'] != tax.id:
                             continue
-         
+
                         tax_amount = tax_value['amount']
                         tax_base = tax_value['base']
-         
+
                         purchase_tax_groups[group_id]['subtotal'] += tax_base
                         purchase_tax_groups[group_id]['tax'] += tax_amount
                         purchase_tax_groups[group_id]['total'] += (
                             tax_base + tax_amount
                         )
-        _logger.info(
-            '============================================================'
-        )
-     
+
+        # ============================================================
+        # PURCHASE TAX GROUP LOG
+        # ============================================================
+
         _logger.info(
             'PURCHASE TAX GROUP SUMMARY'
         )
-     
+
         for group_id, values in purchase_tax_groups.items():
-     
+
             _logger.info(
-                'Purchase Tax Group ID=%s | Name=%s | Subtotal=%s | Tax=%s | Total=%s',
+                'Purchase Tax Group ID=%s | Name=%s | Subtotal=%s | '
+                'Tax=%s | Total=%s',
                 group_id,
                 values['name'],
                 values['subtotal'],
                 values['tax'],
                 values['total'],
             )
-     
-        _logger.info(
-            '============================================================'
-        )
-        # ============================================================
-        # REPORT DATA LOG
-        # ============================================================
-
-        _logger.info(
-            'REPORT DATA'
-        )
-
-        _logger.info(
-            'Invoice IDs: %s',
-            invoice_ids,
-        )
-
-        _logger.info(
-            'Date range: %s -> %s',
-            date_start,
-            date_end,
-        )
-
-        _logger.info(
-            'Invoices found in report: %s',
-            len(invoices),
-        )
-
-        for invoice in invoices:
-
-            _logger.info(
-                'REPORT Invoice ID=%s | Number=%s | Date=%s | Partner=%s | '
-                'State=%s | Type=%s | Amount Total=%s',
-                invoice.id,
-                invoice.number,
-                invoice.date_invoice,
-                invoice.partner_id.display_name,
-                invoice.state,
-                invoice.type,
-                invoice.amount_total,
-            )
 
         _logger.info(
             '============================================================'
         )
+
+        # ============================================================
+        # WIZARD DOCUMENT
+        # ============================================================
+
+        wizard = self.env['sempai.tax.report.wizard'].browse(docids)
 
         # ============================================================
         # REPORT VALUES
@@ -225,9 +258,7 @@ class SempaiTaxReport(models.AbstractModel):
         return {
             'doc_ids': docids,
             'doc_model': 'sempai.tax.report.wizard',
-            'docs': self.env['sempai.tax.report.wizard'].browse(
-                data.get('context', {}).get('active_ids', [])
-            ),
+            'docs': wizard,
             'invoices': invoices,
             'purchases': purchases,
             'date_start': date_start,
@@ -235,3 +266,4 @@ class SempaiTaxReport(models.AbstractModel):
             'tax_groups': tax_groups,
             'purchase_tax_groups': purchase_tax_groups,
         }
+
