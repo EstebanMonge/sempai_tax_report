@@ -73,6 +73,27 @@
 
                         </t>
 
+                        <tr>
+                            <td colspan="3">
+                                <strong>Total Sales</strong>
+                            </td>
+                            <td class="text-right">
+                                <strong>
+                                    <span t-esc="'%.2f' % sum(invoices.mapped('amount_untaxed'))"/>
+                                </strong>
+                            </td>
+                            <td class="text-right">
+                                <strong>
+                                    <span t-esc="'%.2f' % sum(invoices.mapped('amount_tax'))"/>
+                                </strong>
+                            </td>
+                            <td class="text-right">
+                                <strong>
+                                    <span t-esc="'%.2f' % sum(invoices.mapped('amount_total'))"/>
+                                </strong>
+                            </td>
+                        </tr>
+
                     </tbody>
                 </table>
 <t t-if="not invoices">
@@ -160,6 +181,26 @@
                     </td>
                 </tr>
             </t>
+                <tr>
+                    <td colspan="3">
+                        <strong>Total Purchases</strong>
+                    </td>
+                    <td class="text-right">
+                        <strong>
+                            <span t-esc="'%.2f' % sum(purchases.mapped('amount_untaxed'))"/>
+                        </strong>
+                    </td>
+                    <td class="text-right">
+                        <strong>
+                            <span t-esc="'%.2f' % sum(purchases.mapped('amount_tax'))"/>
+                        </strong>
+                    </td>
+                    <td class="text-right">
+                        <strong>
+                            <span t-esc="'%.2f' % sum(purchases.mapped('amount_total'))"/>
+                        </strong>
+                    </td>
+                </tr>
         </tbody>
     </table>
 </t>

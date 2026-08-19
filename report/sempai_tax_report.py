@@ -33,7 +33,17 @@ class SempaiTaxReport(models.AbstractModel):
                 invoice.date_invoice or '',
             )
         )
+        sales_totals = {
+            'untaxed': sum(invoice.amount_untaxed for invoice in invoices),
+            'tax': sum(invoice.amount_tax for invoice in invoices),
+            'total': sum(invoice.amount_total for invoice in invoices),
+        }
 
+        purchase_totals = {
+            'untaxed': sum(purchase.amount_untaxed for purchase in purchases),
+            'tax': sum(purchase.amount_tax for purchase in purchases),
+            'total': sum(purchase.amount_total for purchase in purchases),
+        }
         # ============================================================
         # SALES TAX GROUP CALCULATION
         # ============================================================
@@ -234,4 +244,6 @@ class SempaiTaxReport(models.AbstractModel):
             'date_end': date_end,
             'tax_groups': tax_groups,
             'purchase_tax_groups': purchase_tax_groups,
+            'sales_totals': sales_totals,
+            'purchase_totals': purchase_totals,
         }
