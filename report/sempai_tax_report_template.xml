@@ -33,6 +33,7 @@
                             <th>Invoice</th>
                             <th>Date</th>
                             <th>Partner</th>
+                            <th>Currency</th>
                             <th>Subtotal</th>
                             <th>Taxes</th>
                             <th>Total</th>
@@ -58,6 +59,10 @@
                                 </td>
 
                                 <td>
+                                    <span t-esc="invoice.currency_id.name"/>
+                                </td>
+
+                                <td>
                                     <span t-esc="invoice.amount_untaxed"/>
                                 </td>
 
@@ -73,27 +78,29 @@
 
                         </t>
 
-                        <tr>
-                            <td colspan="3">
-                                <strong>Total Sales</strong>
-                            </td>
-                            <td class="text-right">
-                                <strong>
-                                    <span t-esc="'%.2f' % sum(invoices.mapped('amount_untaxed'))"/>
-                                </strong>
-                            </td>
-                            <td class="text-right">
-                                <strong>
-                                    <span t-esc="'%.2f' % sum(invoices.mapped('amount_tax'))"/>
-                                </strong>
-                            </td>
-                            <td class="text-right">
-                                <strong>
-                                    <span t-esc="'%.2f' % sum(invoices.mapped('amount_total'))"/>
-                                </strong>
-                            </td>
-                        </tr>
+<tr>
+    <td colspan="4">
+        <strong>Total Sales</strong>
+    </td>
 
+    <td class="text-right">
+        <strong>
+            <span t-esc="'%.2f' % sales_subtotal"/>
+        </strong>
+    </td>
+
+    <td class="text-right">
+        <strong>
+            <span t-esc="'%.2f' % sales_tax"/>
+        </strong>
+    </td>
+
+    <td class="text-right">
+        <strong>
+            <span t-esc="'%.2f' % sales_total"/>
+        </strong>
+    </td>
+</tr>
                     </tbody>
                 </table>
 <t t-if="not invoices">
@@ -147,6 +154,7 @@
                 <th>Invoice</th>
                 <th>Date</th>
                 <th>Partner</th>
+                <th>Currency</th>
                 <th>Subtotal</th>
                 <th>Taxes</th>
                 <th>Total</th>
@@ -167,7 +175,9 @@
                     <td>
                         <span t-esc="purchase.partner_id.name"/>
                     </td>
-
+                    <td>
+                        <span t-esc="purchase.currency_id.name"/>
+                    </td>
                     <td class="text-right">
                         <span t-esc="purchase.amount_untaxed"/>
                     </td>
@@ -181,26 +191,30 @@
                     </td>
                 </tr>
             </t>
-                <tr>
-                    <td colspan="3">
-                        <strong>Total Purchases</strong>
-                    </td>
-                    <td class="text-right">
-                        <strong>
-                            <span t-esc="'%.2f' % sum(purchases.mapped('amount_untaxed'))"/>
-                        </strong>
-                    </td>
-                    <td class="text-right">
-                        <strong>
-                            <span t-esc="'%.2f' % sum(purchases.mapped('amount_tax'))"/>
-                        </strong>
-                    </td>
-                    <td class="text-right">
-                        <strong>
-                            <span t-esc="'%.2f' % sum(purchases.mapped('amount_total'))"/>
-                        </strong>
-                    </td>
-                </tr>
+<tr>
+    <td colspan="4">
+        <strong>Total Purchases</strong>
+    </td>
+
+    <td class="text-right">
+        <strong>
+            <span t-esc="'%.2f' % purchase_subtotal"/>
+        </strong>
+    </td>
+
+    <td class="text-right">
+        <strong>
+            <span t-esc="'%.2f' % purchase_tax"/>
+        </strong>
+    </td>
+
+    <td class="text-right">
+        <strong>
+            <span t-esc="'%.2f' % purchase_total"/>
+        </strong>
+    </td>
+</tr>
+
         </tbody>
     </table>
 </t>
