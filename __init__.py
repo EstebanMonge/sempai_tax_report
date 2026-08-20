@@ -1,4 +1,3 @@
 # -*- coding: utf-8 -*-
 
-from . import wizard
-from . import report
+from . import sempai_tax_report

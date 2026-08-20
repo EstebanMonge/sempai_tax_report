@@ -39,6 +39,7 @@
                             <th>Invoice</th>
                             <th>Date</th>
                             <th>Partner</th>
+                            <th>Currency</th>
                             <th>Subtotal</th>
                             <th>Taxes</th>
                             <th>Total</th>
@@ -62,7 +63,9 @@
                                 <td>
                                     <span t-esc="invoice.partner_id.display_name"/>
                                 </td>
-
+                                <td>
+                                    <span t-esc="invoice.currency_id.name"/>
+                                </td>
                                 <td class="text-right">
                                     <span t-esc="'%.2f' % invoice.amount_untaxed"/>
                                 </td>
@@ -79,7 +82,7 @@
 
                         </t>
                         <tr>
-                            <td colspan="3" class="text-right">
+                            <td colspan="4" class="text-right">
                                 <strong>Total Sales</strong>
                             </td>
 
@@ -91,13 +94,13 @@
 
                             <td class="text-right">
                                 <strong>
-                                    <span t-esc="'%.2f' % sales_tax"/>
+                                   <span t-esc="'%.2f' % sales_tax"/> 
                                 </strong>
                             </td>
 
                             <td class="text-right">
                                 <strong>
-                                    <span t-esc="'%.2f' % sales_total"/>
+                                    <span t-esc="'%.2f' % sales_total"/> 
                                 </strong>
                             </td>
                         </tr>
@@ -174,6 +177,7 @@
                                 <th>Invoice</th>
                                 <th>Date</th>
                                 <th>Partner</th>
+                                <th>Currency</th>
                                 <th>Subtotal</th>
                                 <th>Taxes</th>
                                 <th>Total</th>
@@ -198,6 +202,10 @@
                                         <span t-esc="purchase.partner_id.display_name"/>
                                     </td>
 
+                                    <td>
+                                        <span t-esc="purchase.currency_id.name"/>
+                                    </td>
+
                                     <td class="text-right">
                                         <span t-esc="'%.2f' % purchase.amount_untaxed"/>
                                     </td>
@@ -214,7 +222,7 @@
 
                             </t>
                             <tr>
-                                <td colspan="3" class="text-right">
+                                <td colspan="4" class="text-right">
                                     <strong>Total Purchases</strong>
                                 </td>
 
