@@ -27,8 +27,7 @@
                 <h3 style="margin-top: 20px;">
                     Sales
                 </h3>
-<t t-if="invoices">
-    <table class="table table-bordered">
+                <table class="table table-bordered">
                     <thead>
                         <tr>
                             <th>Invoice</th>
@@ -103,8 +102,7 @@
     </td>
 </tr>
                     </tbody>
-    </table>
-</t>
+                </table>
 <t t-if="not invoices">
     <p>
         No invoices found for this period.

@@ -137,12 +137,8 @@ class SempaiTaxReport(models.AbstractModel):
                             'total': 0.0,
                         }
 
-                    price_unit_discounted = line.price_unit * (
-                        1 - (line.discount or 0.0) / 100.0
-                    )
-
                     taxes = tax.compute_all(
-                        price_unit_discounted,
+                        line.price_unit,
                         invoice.currency_id,
                         line.quantity,
                         product=line.product_id,
@@ -257,12 +253,8 @@ class SempaiTaxReport(models.AbstractModel):
                             'total': 0.0,
                         }
 
-                    price_unit_discounted = line.price_unit * (
-                        1 - (line.discount or 0.0) / 100.0
-                    )
-
                     taxes = tax.compute_all(
-                        price_unit_discounted,
+                        line.price_unit,
                         purchase.currency_id,
                         line.quantity,
                         product=line.product_id,
@@ -466,7 +458,9 @@ class SempaiTaxReport(models.AbstractModel):
             'doc_ids': docids,
             'doc_model': 'sempai.tax.report.wizard',
 
-            'docs': self.env['sempai.tax.report.wizard'].browse(docids),
+            'docs': self.env['sempai.tax.report.wizard'].browse(
+                data.get('context', {}).get('active_ids', [])
+            ),
 
             'invoices': invoices,
             'purchases': purchases,
