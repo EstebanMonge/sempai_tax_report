@@ -11,146 +11,6 @@ class SempaiTaxReport(models.AbstractModel):
     _name = 'report.sempai_tax_report.sempai_tax_report_document'
 
     @api.model
-    def _compute_tax_groups(self, invoices, currency, company):
-        """Group tax amounts of ``invoices`` by tax group, converted to
-        ``currency`` (the company currency)."""
-
-        tax_groups = {}
-
-        for invoice in invoices:
-
-            for line in invoice.invoice_line_ids:
-
-                for tax in line.invoice_line_tax_ids:
-
-                    tax_group = tax.tax_group_id
-
-                    if not tax_group:
-                        continue
-
-                    group_id = tax_group.id
-
-                    if group_id not in tax_groups:
-
-                        tax_groups[group_id] = {
-                            'name': tax_group.name,
-                            'subtotal': 0.0,
-                            'tax': 0.0,
-                            'total': 0.0,
-                        }
-
-                    price_unit_discounted = line.price_unit * (
-                        1 - (line.discount or 0.0) / 100.0
-                    )
-
-                    taxes = tax.compute_all(
-                        price_unit_discounted,
-                        invoice.currency_id,
-                        line.quantity,
-                        product=line.product_id,
-                        partner=invoice.partner_id,
-                    )
-
-                    for tax_value in taxes['taxes']:
-
-                        if tax_value['id'] != tax.id:
-                            continue
-
-                        tax_amount = tax_value['amount']
-                        tax_base = tax_value['base']
-
-                        # ------------------------------------------------
-                        # Convert invoice currency -> company currency
-                        # ------------------------------------------------
-
-                        tax_base_company = invoice.currency_id._convert(
-                            tax_base,
-                            currency,
-                            company,
-                            invoice.date_invoice,
-                            round=False,
-                        )
-
-                        tax_amount_company = invoice.currency_id._convert(
-                            tax_amount,
-                            currency,
-                            company,
-                            invoice.date_invoice,
-                            round=False,
-                        )
-
-                        tax_groups[group_id]['subtotal'] += (
-                            tax_base_company
-                        )
-
-                        tax_groups[group_id]['tax'] += (
-                            tax_amount_company
-                        )
-
-                        tax_groups[group_id]['total'] += (
-                            tax_base_company + tax_amount_company
-                        )
-
-        for values in tax_groups.values():
-
-            values['subtotal'] = currency.round(
-                values['subtotal']
-            )
-
-            values['tax'] = currency.round(
-                values['tax']
-            )
-
-            values['total'] = currency.round(
-                values['total']
-            )
-
-        return tax_groups
-
-    @api.model
-    def _compute_document_totals(self, invoices, currency, company):
-        """Return (subtotal, tax, total) for ``invoices``, converted to
-        ``currency`` (the company currency)."""
-
-        subtotal = 0.0
-        tax = 0.0
-        total = 0.0
-
-        for invoice in invoices:
-
-            invoice_date = invoice.date_invoice
-
-            subtotal += invoice.currency_id._convert(
-                invoice.amount_untaxed,
-                currency,
-                company,
-                invoice_date,
-                round=False,
-            )
-
-            tax += invoice.currency_id._convert(
-                invoice.amount_tax,
-                currency,
-                company,
-                invoice_date,
-                round=False,
-            )
-
-            total += invoice.currency_id._convert(
-                invoice.amount_total,
-                currency,
-                company,
-                invoice_date,
-                round=False,
-            )
-
-        return (
-            currency.round(subtotal),
-            currency.round(tax),
-            currency.round(total),
-        )
-
-    @api.model
     def _get_report_values(self, docids, data=None):
 
         data = data or {}
@@ -253,7 +113,99 @@ class SempaiTaxReport(models.AbstractModel):
         # ALL VALUES ARE CONVERTED TO COMPANY CURRENCY
         # ============================================================
 
-        tax_groups = self._compute_tax_groups(invoices, currency, company)
+        tax_groups = {}
+
+        for invoice in invoices:
+
+            for line in invoice.invoice_line_ids:
+
+                for tax in line.invoice_line_tax_ids:
+
+                    tax_group = tax.tax_group_id
+
+                    if not tax_group:
+                        continue
+
+                    group_id = tax_group.id
+
+                    if group_id not in tax_groups:
+
+                        tax_groups[group_id] = {
+                            'name': tax_group.name,
+                            'subtotal': 0.0,
+                            'tax': 0.0,
+                            'total': 0.0,
+                        }
+
+                    price_unit_discounted = line.price_unit * (
+                        1 - (line.discount or 0.0) / 100.0
+                    )
+
+                    taxes = tax.compute_all(
+                        price_unit_discounted,
+                        invoice.currency_id,
+                        line.quantity,
+                        product=line.product_id,
+                        partner=invoice.partner_id,
+                    )
+
+                    for tax_value in taxes['taxes']:
+
+                        if tax_value['id'] != tax.id:
+                            continue
+
+                        tax_amount = tax_value['amount']
+                        tax_base = tax_value['base']
+
+                        # ------------------------------------------------
+                        # Convert invoice currency -> company currency
+                        # ------------------------------------------------
+
+                        tax_base_company = invoice.currency_id._convert(
+                            tax_base,
+                            currency,
+                            company,
+                            invoice.date_invoice,
+                            round=False,
+                        )
+
+                        tax_amount_company = invoice.currency_id._convert(
+                            tax_amount,
+                            currency,
+                            company,
+                            invoice.date_invoice,
+                            round=False,
+                        )
+
+                        tax_groups[group_id]['subtotal'] += (
+                            tax_base_company
+                        )
+
+                        tax_groups[group_id]['tax'] += (
+                            tax_amount_company
+                        )
+
+                        tax_groups[group_id]['total'] += (
+                            tax_base_company + tax_amount_company
+                        )
+
+        # ============================================================
+        # ROUND SALES TAX GROUPS
+        # ============================================================
+
+        for values in tax_groups.values():
+
+            values['subtotal'] = currency.round(
+                values['subtotal']
+            )
+
+            values['tax'] = currency.round(
+                values['tax']
+            )
+
+            values['total'] = currency.round(
+                values['total']
+            )
 
         # ============================================================
         # SALES TAX GROUP LOG
@@ -281,9 +233,99 @@ class SempaiTaxReport(models.AbstractModel):
         # ALL VALUES ARE CONVERTED TO COMPANY CURRENCY
         # ============================================================
 
-        purchase_tax_groups = self._compute_tax_groups(
-            purchases, currency, company
-        )
+        purchase_tax_groups = {}
+
+        for purchase in purchases:
+
+            for line in purchase.invoice_line_ids:
+
+                for tax in line.invoice_line_tax_ids:
+
+                    tax_group = tax.tax_group_id
+
+                    if not tax_group:
+                        continue
+
+                    group_id = tax_group.id
+
+                    if group_id not in purchase_tax_groups:
+
+                        purchase_tax_groups[group_id] = {
+                            'name': tax_group.name,
+                            'subtotal': 0.0,
+                            'tax': 0.0,
+                            'total': 0.0,
+                        }
+
+                    price_unit_discounted = line.price_unit * (
+                        1 - (line.discount or 0.0) / 100.0
+                    )
+
+                    taxes = tax.compute_all(
+                        price_unit_discounted,
+                        purchase.currency_id,
+                        line.quantity,
+                        product=line.product_id,
+                        partner=purchase.partner_id,
+                    )
+
+                    for tax_value in taxes['taxes']:
+
+                        if tax_value['id'] != tax.id:
+                            continue
+
+                        tax_amount = tax_value['amount']
+                        tax_base = tax_value['base']
+
+                        # ------------------------------------------------
+                        # Convert invoice currency -> company currency
+                        # ------------------------------------------------
+
+                        tax_base_company = purchase.currency_id._convert(
+                            tax_base,
+                            currency,
+                            company,
+                            purchase.date_invoice,
+                            round=False,
+                        )
+
+                        tax_amount_company = purchase.currency_id._convert(
+                            tax_amount,
+                            currency,
+                            company,
+                            purchase.date_invoice,
+                            round=False,
+                        )
+
+                        purchase_tax_groups[group_id]['subtotal'] += (
+                            tax_base_company
+                        )
+
+                        purchase_tax_groups[group_id]['tax'] += (
+                            tax_amount_company
+                        )
+
+                        purchase_tax_groups[group_id]['total'] += (
+                            tax_base_company + tax_amount_company
+                        )
+
+        # ============================================================
+        # ROUND PURCHASE TAX GROUPS
+        # ============================================================
+
+        for values in purchase_tax_groups.values():
+
+            values['subtotal'] = currency.round(
+                values['subtotal']
+            )
+
+            values['tax'] = currency.round(
+                values['tax']
+            )
+
+            values['total'] = currency.round(
+                values['total']
+            )
 
         # ============================================================
         # PURCHASE TAX GROUP LOG
@@ -311,18 +353,82 @@ class SempaiTaxReport(models.AbstractModel):
         # ALL VALUES ARE CONVERTED TO COMPANY CURRENCY
         # ============================================================
 
-        sales_subtotal, sales_tax, sales_total = (
-            self._compute_document_totals(invoices, currency, company)
-        )
+        sales_subtotal = 0.0
+        sales_tax = 0.0
+        sales_total = 0.0
+        
+        for invoice in invoices:
+        
+            invoice_date = invoice.date_invoice
+        
+            sales_subtotal += invoice.currency_id._convert(
+                invoice.amount_untaxed,
+                currency,
+                company,
+                invoice_date,
+                round=False,
+            )
+        
+            sales_tax += invoice.currency_id._convert(
+                invoice.amount_tax,
+                currency,
+                company,
+                invoice_date,
+                round=False,
+            )
+        
+            sales_total += invoice.currency_id._convert(
+                invoice.amount_total,
+                currency,
+                company,
+                invoice_date,
+                round=False,
+            )
+        
+        sales_subtotal = currency.round(sales_subtotal)
+        sales_tax = currency.round(sales_tax)
+        sales_total = currency.round(sales_total)
 
         # ============================================================
         # PURCHASE TOTALS
         # ALL VALUES ARE CONVERTED TO COMPANY CURRENCY
         # ============================================================
 
-        purchase_subtotal, purchase_tax, purchase_total = (
-            self._compute_document_totals(purchases, currency, company)
-        )
+        purchase_subtotal = 0.0
+        purchase_tax = 0.0
+        purchase_total = 0.0
+        
+        for purchase in purchases:
+        
+            purchase_date = purchase.date_invoice
+        
+            purchase_subtotal += purchase.currency_id._convert(
+                purchase.amount_untaxed,
+                currency,
+                company,
+                purchase_date,
+                round=False,
+            )
+        
+            purchase_tax += purchase.currency_id._convert(
+                purchase.amount_tax,
+                currency,
+                company,
+                purchase_date,
+                round=False,
+            )
+        
+            purchase_total += purchase.currency_id._convert(
+                purchase.amount_total,
+                currency,
+                company,
+                purchase_date,
+                round=False,
+            )
+        
+        purchase_subtotal = currency.round(purchase_subtotal)
+        purchase_tax = currency.round(purchase_tax)
+        purchase_total = currency.round(purchase_total)
 
         # ============================================================
         # TOTAL LOG
@@ -353,63 +459,6 @@ class SempaiTaxReport(models.AbstractModel):
         )
 
         # ============================================================
-        # SALES GROUPED BY ECONOMIC ACTIVITY
-        # ALL VALUES ARE CONVERTED TO COMPANY CURRENCY
-        # ============================================================
-
-        economic_activities = {}
-
-        for invoice in invoices:
-
-            activity = invoice.economic_activity_id
-            activity_id = activity.id or 0
-
-            if activity_id not in economic_activities:
-
-                economic_activities[activity_id] = {
-                    'name': activity.name or 'Sin Actividad Económica',
-                    'code': activity.code or '',
-                    'invoices': self.env['account.invoice'],
-                }
-
-            economic_activities[activity_id]['invoices'] |= invoice
-
-        for values in economic_activities.values():
-
-            values['tax_groups'] = self._compute_tax_groups(
-                values['invoices'], currency, company
-            )
-
-            values['subtotal'], values['tax'], values['total'] = (
-                self._compute_document_totals(
-                    values['invoices'], currency, company
-                )
-            )
-
-        economic_activities = sorted(
-            economic_activities.values(),
-            key=lambda values: values['name'],
-        )
-
-        _logger.info(
-            'SALES BY ECONOMIC ACTIVITY IN %s',
-            currency.name,
-        )
-
-        for values in economic_activities:
-
-            _logger.info(
-                'Economic Activity=%s (%s) | Invoices=%s | Subtotal=%s | '
-                'Tax=%s | Total=%s',
-                values['name'],
-                values['code'],
-                len(values['invoices']),
-                values['subtotal'],
-                values['tax'],
-                values['total'],
-            )
-
-        # ============================================================
         # REPORT VALUES
         # ============================================================
 
@@ -437,6 +486,4 @@ class SempaiTaxReport(models.AbstractModel):
             'purchase_subtotal': purchase_subtotal,
             'purchase_tax': purchase_tax,
             'purchase_total': purchase_total,
-
-            'economic_activities': economic_activities,
         }
