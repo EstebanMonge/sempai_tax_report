@@ -24,14 +24,21 @@ class SempaiTaxReportWizard(models.TransientModel):
                 'Start Date cannot be greater than End Date.'
             )
 
-        invoices = self.env['account.invoice'].search([
+        domain = [
             ('company_id', '=', self.env.user.company_id.id),
             ('date_invoice', '>=', self.date_start),
             ('date_invoice', '<=', self.date_end),
             ('state', 'in', ['open', 'paid']),
-            ('state_tributacion', '=', 'aceptado'),
             ('type', '=', 'out_invoice'),
-        ])
+        ]
+
+        # Companies under the simplified regimen have Hacienda's web
+        # service disabled, so state_tributacion is never populated and
+        # invoices should not be filtered by it.
+        if self.env.user.company_id.frm_ws_ambiente != 'disabled':
+            domain.append(('state_tributacion', '=', 'aceptado'))
+
+        invoices = self.env['account.invoice'].search(domain)
 
         purchases = self.env['account.invoice'].search([
             ('company_id', '=', self.env.user.company_id.id),
