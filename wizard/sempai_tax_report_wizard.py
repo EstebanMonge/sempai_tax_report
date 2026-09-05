@@ -5,7 +5,6 @@ import logging
 from odoo import models, fields
 from odoo.exceptions import ValidationError
 
-
 _logger = logging.getLogger(__name__)
 
 
@@ -35,14 +34,23 @@ class SempaiTaxReportWizard(models.TransientModel):
         # SALES
         # ============================================================
 
-        invoices = self.env['account.move'].search([
-            ('company_id', '=', self.env.user.company_id.id),
+        company = self.env.user.company_id
+
+        sales_domain = [
+            ('company_id', '=', company.id),
             ('invoice_date', '>=', self.date_start),
             ('invoice_date', '<=', self.date_end),
             ('state', '=', 'posted'),
-            ('state_tributacion', '=', 'aceptado'),
             ('move_type', '=', 'out_invoice'),
-        ]).sorted(
+        ]
+
+        # Simplified regimen companies (electronic invoicing disabled)
+        # never populate state_tributacion, so it must not be used to
+        # filter their invoices.
+        if company.frm_ws_ambiente != 'disabled':
+            sales_domain.append(('state_tributacion', '=', 'aceptado'))
+
+        invoices = self.env['account.move'].search(sales_domain).sorted(
             key=lambda invoice: (
                 invoice.partner_id.name or '',
                 invoice.invoice_date or '',
@@ -54,7 +62,7 @@ class SempaiTaxReportWizard(models.TransientModel):
         # ============================================================
 
         purchases = self.env['account.move'].search([
-            ('company_id', '=', self.env.user.company_id.id),
+            ('company_id', '=', company.id),
             ('invoice_date', '>=', self.date_start),
             ('invoice_date', '<=', self.date_end),
             ('state', '=', 'posted'),
@@ -78,11 +86,11 @@ class SempaiTaxReportWizard(models.TransientModel):
         )
         _logger.info(
             'Company ID: %s',
-            self.env.user.company_id.id,
+            company.id,
         )
         _logger.info(
             'Company: %s',
-            self.env.user.company_id.name,
+            company.name,
         )
         _logger.info(
             'Date range: %s -> %s',
