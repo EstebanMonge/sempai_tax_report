@@ -49,7 +49,7 @@
     <menuitem
         id="menu_sempai_tax_report"
         name="Sempai Space Tax Report"
-        parent="account.menu_finance_reports"
+        parent="account.account_reports_taxes_and_fiscal_menu"
         action="action_sempai_tax_report_wizard"
-        sequence="50"/>
+        sequence="100"/>
 </odoo>

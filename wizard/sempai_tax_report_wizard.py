@@ -36,7 +36,7 @@ class SempaiTaxReportWizard(models.TransientModel):
         # SALES
         # ============================================================
 
-        company = self.env.user.company_id
+        company = self.env.company
 
         sales_domain = [
             ('company_id', '=', company.id),
@@ -215,7 +215,7 @@ class SempaiTaxReportWizard(models.TransientModel):
         # REPORT CURRENCY
         # ============================================================
 
-        company = self.env.user.company_id
+        company = self.env.company
         currency = company.currency_id
 
         _logger.info(
@@ -298,7 +298,9 @@ class SempaiTaxReportWizard(models.TransientModel):
 
         for invoice in invoices:
 
-            for line in invoice.invoice_line_ids:
+            for line in invoice.invoice_line_ids.filtered(
+                lambda l: l.display_type == 'product'
+            ):
 
                 for tax in line.tax_ids:
 
@@ -414,7 +416,9 @@ class SempaiTaxReportWizard(models.TransientModel):
 
         for purchase in purchases:
 
-            for line in purchase.invoice_line_ids:
+            for line in purchase.invoice_line_ids.filtered(
+                lambda l: l.display_type == 'product'
+            ):
 
                 for tax in line.tax_ids:
 
